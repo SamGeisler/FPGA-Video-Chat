@@ -1,0 +1,4 @@
+project/
+src/lib/
+src/include/
+design/liteeth_core.v

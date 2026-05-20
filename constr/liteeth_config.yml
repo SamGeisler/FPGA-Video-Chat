@@ -1,0 +1,29 @@
+vendor: xilinx
+toolchain: vivado
+
+phy: LiteEthPHYRMII
+clk_freq: 100e6
+
+phy_rx_delay: 0e-9
+phy_tx_delay: 2e-9
+
+with_hw_init_reset: true
+
+endianness: little
+
+core: udp
+
+tx_buffer_depth: 16384
+rx_buffer_depth: 16384
+tx_slots: 8
+rx_slots: 8
+
+mac_address: 0x10e2d5000000
+ip_address: 192.168.1.50
+
+udp_ports:
+  video:
+    port: 5000
+    mode: streamer
+    tx_fifo_depth: 2048
+    rx_fifo_depth: 2048

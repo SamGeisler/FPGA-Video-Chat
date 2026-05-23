@@ -63,7 +63,7 @@ def dct_mat_fast_unscaled():
 
 def dct_mat_fast_scaled():
     M = dct_mat_fast_unscaled() @ dct_mat_raw_scaled().T
-    return np.linalg.inv(M) @ dct_mat_fast_unscaled
+    return np.linalg.inv(M) @ dct_mat_fast_unscaled()
 
 def dct8x8(x, mode = "fast", scaled = True):
     result = np.zeros((8,8))
@@ -90,6 +90,5 @@ def inv_dct8x8(x, mode = "fast"):
     return result
 
 def dct_scaling_coeff():
-    dct_mat_fast_unscaled = np.zeros((8,8))
     M = dct_mat_fast_unscaled() @ dct_mat_raw_scaled().T
     return M[0,0]

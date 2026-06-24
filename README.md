@@ -1,1 +1,1 @@
-FPGA-Based Networked Video Chat System
+FPGA Networked Video Chat System

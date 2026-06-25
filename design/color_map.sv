@@ -1,10 +1,10 @@
 module color_map(
-    input logic clk_25, clk_125,
-    input logic active,
+    input clk_25, clk_125,
+    input active,
     input [9:0] drawX, drawY,
 
     output logic [16:0] br_addrb, 
-    input logic [11:0] br_doutb,
+    input [11:0] br_doutb,
     output logic br_enb,
 
     output logic [3:0] R, 

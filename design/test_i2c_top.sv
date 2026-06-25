@@ -1,5 +1,5 @@
 module test_i2c_top(
-    input logic clk_100, reset,
+    input clk_100, reset,
     inout wire c_SDA,
     output logic c_SCL, 
     output logic c_XLK,

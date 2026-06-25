@@ -2,7 +2,7 @@ module transmit(
     input sys_clk, reset,
 
     output logic [16:0] br_addrb, 
-    input logic [15:0] br_doutb,
+    input [15:0] br_doutb,
     output logic br_enb,
 
     output [7:0] sink_data,

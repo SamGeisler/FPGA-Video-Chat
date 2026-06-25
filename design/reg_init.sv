@@ -1,7 +1,7 @@
 module reg_init(
     input clk, reset,
     
-    input logic sda_in,
+    input sda_in,
 
     output logic init_done_tick,
                  sda_oe,

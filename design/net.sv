@@ -9,6 +9,8 @@ module net(
     output     [1:0] rmii_tx_data,
     output           rmii_tx_en,
 
+    input [31:0] ipaddr,
+
     output [16:0] send_buff_addr, 
     input [15:0] send_buff_dout,
     output send_buff_en,
@@ -22,7 +24,7 @@ module net(
 logic [7:0] source_data, sink_data;
 logic source_ready, sink_ready, source_last, sink_last, source_valid, sink_valid;
 
-liteeth_core #(.VIDEO_IP_ADDR(32'ha9fe503a), .VIDEO_UDP_PORT(5000)) eth_i
+liteeth_core #(.VIDEO_IP_ADDR(ipaddr), .VIDEO_UDP_PORT(5000)) eth_i
                   (.rmii_clocks_ref_clk, .rmii_crs_dv, .rmii_mdc, .rmii_mdio, .rmii_rst_n(),
                    .rmii_rx_data, .rmii_tx_data, .rmii_tx_en, .sys_clock(sys_clk), .sys_reset(reset),
                    .video_sink_data(sink_data), .video_sink_last(sink_last), .video_sink_valid(sink_valid), 

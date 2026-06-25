@@ -1,10 +1,10 @@
 module capture(
-    input logic clk_100, reset,
-    input logic [7:0] data,
-    input logic href, vsync,
-    input logic pclk,
+    input clk_100, reset,
+    input [7:0] data,
+    input href, vsync,
+    input pclk,
 
-    input logic capture,
+    input capture,
 
     output logic [16:0] br_addra,
     output logic [15:0] br_dina,

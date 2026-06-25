@@ -1,0 +1,17 @@
+Project stages (ordered by priority)
+
+Get system working on new hardware
+Update IP address system
+UDP/IP transmission with rudimantary (functional) testbench
+UDP/IP reception with rudimentary (functional) testbench
+Build out UDP/IP testbench to something sophisticated
+Get JPEG compression working in simulation (e.g. testbench that compresses .bmp to .jpeg) - modules designed around real time video streaming
+MJPEG transmission and software decoding
+MJPEG reception and hardware decoding. Build out testbench if necessary
+RTP packetization
+Implement TCP on 391 OS
+Sophisticated top-level testbench
+Replace block ram with DDR
+
+
+Everything subject to change

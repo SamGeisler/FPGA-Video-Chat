@@ -1,4 +1,4 @@
-NEXT: Complete conversion to Nexys A7 - VGA, constraints, ethernet (read back over top level module)
+Next: TEST
 
 Project stages (ordered by priority)
 

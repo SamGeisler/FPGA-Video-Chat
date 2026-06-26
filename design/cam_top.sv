@@ -7,8 +7,8 @@ module cam_top(
     input [15:0] sw_i,
 
     //Seven segment displays
-    output logic [3:0] hex_grid_a, hex_grid_b,
-    output logic [7:0] hex_seg_a, hex_seg_b,
+    output logic [7:0] hex_grid,
+    output logic [7:0] hex_seg,
 
     //Camera
     inout wire c_SDA,
@@ -30,7 +30,8 @@ module cam_top(
     inout           rmii_mdio,
     input     [1:0] rmii_rx_data,
     output     [1:0] rmii_tx_data,
-    output           rmii_tx_en
+    output           rmii_tx_en,
+    output           rmii_clk_in
 );
 
 //Inputs
@@ -40,16 +41,18 @@ sync_debounce sdbi (.Clk(clk_100), .d(capture), .q(capture_db));
 sync_debounce sdbi2 (.Clk(clk_100), .d(write_btn), .q(write_btn_db));
 sync_debounce sdbi3 (.Clk(clk_100), .d(setup_btn), .q(setup_btn_db));
 
+logic [31:0] selected_ip;
+
 
 //bram signals - transmit buffer
 logic [16:0] br_addra, br_addrb;
-logic [15:0] br_dina, br_douta, br_doutb;
+logic [11:0] br_dina, br_douta, br_doutb;
 logic br_ena, br_enb;
 logic [1:0] br_wea;
 
 //ram signals - receive buffer
 logic [16:0] recv_addra, recv_addrb;
-logic [15:0] recv_dina, recv_doutb;
+logic [11:0] recv_dina, recv_doutb;
 logic recv_ena, recv_enb;
 logic [1:0] recv_wea;
 
@@ -58,6 +61,7 @@ logic clk_25, clk_125, clk_locked;
 
 //Internal vga signals
 logic [9:0] VGA_drawX, VGA_drawY;
+logic VGA_active;
 
 //Camera signal assignments
 assign c_RET = ~reset;
@@ -79,11 +83,11 @@ dual_port_dist_ram dpdr_i2(.clk(clk_100), .ena(recv_ena), .enb(recv_enb), .wea(r
                           .addra(recv_addra), .addrb(recv_addrb), .dina(recv_dina),
                           .doutb(recv_doutb));
 
-clk_wiz_0 clk_wiz_i(.reset(reset), .clk_in1(clk_100), .clk_out1(clk_125), .clk_out2(clk_25), .locked(clk_locked));
+clk_wiz_0 clk_wiz_i(.reset(reset), .clk_in(clk_100), .clk_125, .clk_50(rmii_clk_in), .clk_25, .locked(clk_locked));
 
-vga_controller vga_i(.pixel_clk(clk_25), .reset(reset), .hs(VGA_HS), .vs(VGA_VS), .active_nblank(), .drawX(VGA_drawX), .drawY(VGA_drawY), .sync());
+vga_controller vga_i(.clk(clk_25), .reset(reset), .hsync(VGA_HS), .vsync(VGA_VS), .active(VGA_active), .pixel_x(VGA_drawX), .pixel_y(VGA_drawY));
 
-color_map cmap_i(.active(active_nblank), .drawX(VGA_drawX), .drawY(VGA_drawY), .br_addrb(recv_addrb), .br_doutb(recv_doutb), .br_enb(recv_enb), .R(VGA_R), .G(VGA_G), .B(VGA_B), .clk_25, .clk_125);
+color_map cmap_i(.active(VGA_active), .drawX(VGA_drawX), .drawY(VGA_drawY), .br_addrb(recv_addrb), .br_doutb(recv_doutb), .br_enb(recv_enb), .R(VGA_R), .G(VGA_G), .B(VGA_B), .clk_25, .clk_125);
 
 net net_i(.sys_clk(clk_100), .reset, .rmii_clocks_ref_clk, .rmii_crs_dv, .rmii_mdc, .rmii_mdio,
                      .rmii_rx_data, .rmii_tx_data, .rmii_tx_en, .send_buff_addr(br_addrb),
@@ -107,11 +111,20 @@ assign c_SDA = sda_oe ? 1'b0 : 1'bz;
 assign sda_in = c_SDA;
 
 logic init_done_tick;
-logic [31:0] selected_ip;
-init init_i(.clk(clk_100), .reset, .sda_in, .sda_oe, .init_done_tick, .scl(c_SCL), .ipaddr(selected_ip));
+init init_i(.clk(clk_100), .reset, .sda_in, .sda_oe, .init_done_tick, .scl(c_SCL), .ipaddr(selected_ip), .done_btn(setup_btn_db), .sw_i);
 
-hex_driver hdA(.clk(clk_100), .reset, .in(selected_ip[31:16]), .hex_seg(hex_seg_a), .hex_grid(hex_grid_a));
-hex_driver hdB(.clk(clk_100), .reset, .in(selected_ip[15:0]), .hex_seg(hex_seg_b), .hex_grid(hex_grid_b));
+// Declare an intermediate unpacked array
+logic [3:0] ip_array [8];
+
+// Map the packed vector to the unpacked array elements
+always_comb begin
+    for (int i = 0; i < 8; i++) begin
+        // Maps [31:28] to index 0, [27:24] to index 1, etc.
+        ip_array[i] = selected_ip[31 - (i*4) -: 4]; 
+    end
+end
+
+hex_driver hdA(.clk(clk_100), .reset, .in(ip_array), .hex_seg, .hex_grid);
 
 
 endmodule

@@ -20,6 +20,7 @@ typedef enum logic [2:0] {
     s_first_hw,
     s_second_hw,
     s_await_reg_init,
+    s_do_tick,
     s_done
 } state_t;
 
@@ -32,18 +33,19 @@ always_ff @(posedge clk)
 
 logic reg_done, reg_done_latched;
 always_ff @(posedge clk)
-    red_done_latched <= reg_done_latched ? 1 : reg_done;
+    reg_done_latched <= reg_done_latched ? 1 : reg_done;
 
+assign init_done_tick = input_state==s_do_tick;
 
 always_ff @(posedge clk, posedge reset) begin
     if(reset) begin
         ipaddr <= 0;
         if(sw_i[0]) begin
             ipaddr <= DEFAULT_IP;
-            input_stage <= 2;
+            input_state <= s_done;
         end else begin
             ipaddr <= 0;
-            input_stage <= 0;
+            input_state <= s_first_hw;
         end
     end else begin
         // Next state logic
@@ -56,15 +58,17 @@ always_ff @(posedge clk, posedge reset) begin
                     input_state <= s_await_reg_init;
             s_await_reg_init:
                 if(reg_done_latched)
-                    input_state <= s_done
+                    input_state <= s_do_tick;
+            s_do_tick:
+                input_state <= s_done;
         endcase
 
         // Value to show on hex displays
-        case(input-state)
+        case(input_state)
             s_first_hw:
-                ipaddr <= {sw_i, ipaddr[15:0]}
+                ipaddr <= {sw_i, ipaddr[15:0]};
             s_second_hw:
-                ipaddr <= {ipaddr[31:0], sw_i}
+                ipaddr <= {ipaddr[31:16], sw_i};
         endcase
     end
 end

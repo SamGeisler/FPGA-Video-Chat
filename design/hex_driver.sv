@@ -3,15 +3,14 @@ module hex_driver (
     input   logic           clk,
     input   logic           reset,
 
-    input   logic   [3:0]   in[4],
+    input   logic   [3:0]   in[8],
 
     output  logic   [7:0]   hex_seg,
-    output  logic   [3:0]   hex_grid
+    output  logic   [7:0]   hex_grid
 );
     
     module nibble_to_hex(
         input   logic   [3:0]   nibble,
-        
         output  logic   [7:0]   hex
     );
         always_comb begin
@@ -36,11 +35,11 @@ module hex_driver (
         end
     endmodule
 
-    logic [7:0] hex [4];
+    logic [7:0] hex [8];
 
     genvar i;
     generate
-        for(i = 0; i < 4; i++) begin
+        for(i = 0; i < 8; i++) begin
             nibble_to_hex nibble_to_hex_(
                 .nibble(in[i]),
                 .hex(hex[i])
@@ -48,7 +47,7 @@ module hex_driver (
         end
     endgenerate
 
-    logic [16:0] counter;
+    logic [17:0] counter;
 
     always_ff @( posedge clk ) begin
         if (reset) begin
@@ -63,22 +62,38 @@ module hex_driver (
             hex_grid = '1;
             hex_seg = '1;
         end else begin
-            case (counter [16:15])
-            2'b00: begin
+            case (counter [17:15])
+            3'b000: begin
                 hex_seg = ~hex[0];
-                hex_grid = 4'b1110;
+                hex_grid = 8'b11111110;
             end
-            2'b01: begin
+            3'b001: begin
                 hex_seg = ~hex[1];
-                hex_grid = 4'b1101;
+                hex_grid = 8'b11111101;
             end
             2'b10: begin
                 hex_seg = ~hex[2];
-                hex_grid = 4'b1011;
+                hex_grid = 8'b11111011;
             end
-            2'b11: begin
+            3'b011: begin
                 hex_seg = ~hex[3];
-                hex_grid = 4'b0111;
+                hex_grid = 8'b11110111;
+            end
+            3'b100: begin
+                hex_seg = ~hex[4];
+                hex_grid = 8'b11101111;
+            end
+            3'b101: begin
+                hex_seg = ~hex[5];
+                hex_grid = 8'b11011111;
+            end
+            3'b110: begin
+                hex_seg = ~hex[6];
+                hex_grid = 8'b10111111;
+            end
+            3'b111: begin
+                hex_seg = ~hex[7];
+                hex_grid = 8'b01111111;
             end
             endcase
         end

@@ -1,3 +1,5 @@
+`timescale 1ns / 1ps
+
 module transmit(
     input sys_clk, reset,
 
@@ -13,11 +15,11 @@ module transmit(
 localparam SWIDTH = 320;
 localparam SHEIGHT = 240;
 
-localparam NUM_WORDS = SWIDTH * SHEIGHT;
-localparam PACKETS_PER_FRAME = 128;
-localparam WORDS_PER_PACKET = NUM_WORDS / PACKETS_PER_FRAME;//packets with frame headers are larger
+localparam unsigned NUM_WORDS = SWIDTH * SHEIGHT;
+localparam [15:0] PACKETS_PER_FRAME = 128;
+localparam [16:0] WORDS_PER_PACKET = NUM_WORDS / PACKETS_PER_FRAME;//packets with frame headers are larger
 
-localparam PACKET_DELAY_CYCLES = 100_000;
+localparam [31:0] PACKET_DELAY_CYCLES = 100_000;
 
 logic [31:0] config_delay_counter;
 logic [15:0] packet_num, packet_num_n;
@@ -29,8 +31,6 @@ typedef enum logic [4:0] {
     s_reset,
     s_frame_header_b1,
     s_frame_header_b2,
-    s_frame_header_b3, 
-    s_frame_header_b4,
     s_lb,
     s_hb,
     s_packet_delay
@@ -95,7 +95,7 @@ always_comb begin
             data = packet_num[7:0];
             if(sink_ready) begin
                 state_n = s_lb;
-                br_addrb = {16'b0,packet_num} * WORDS_PER_PACKET + word_num;
+                br_addrb = packet_num * WORDS_PER_PACKET + word_num;
                 br_enb = 1;
             end
         end
@@ -122,7 +122,7 @@ always_comb begin
                     state_n = s_lb;
                     word_num_n = word_num + 1;
 
-                    br_addrb = {16'b0,packet_num_n} * WORDS_PER_PACKET + word_num_n;
+                    br_addrb = packet_num_n * WORDS_PER_PACKET + word_num_n;
                     br_enb = 1;
                 end
             end
@@ -138,7 +138,7 @@ always_comb begin
                     word_num_n = 0;
                     packet_num_n = packet_num + 1;
 
-                    br_addrb = {16'b0,packet_num_n} * WORDS_PER_PACKET + word_num_n;
+                    br_addrb = packet_num * WORDS_PER_PACKET + word_num;
                     br_enb = 1;
                 end
             end

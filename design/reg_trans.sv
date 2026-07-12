@@ -1,3 +1,5 @@
+`timescale 1ns/ 1ps
+
 module cam_i2c #(
     parameter int CLK_DIV = 250,       // 100 MHz / (2*250) ~= 200 kHz phase rate, ~100 kHz SCL
     parameter logic [7:0] DEV_ADDR_W = 8'h42,

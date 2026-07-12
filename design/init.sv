@@ -1,3 +1,5 @@
+`timescale 1ns/ 1ps
+
 module init(
     input clk, reset, 
     input sda_in, done_btn,
@@ -10,11 +12,8 @@ module init(
     output logic [31:0] ipaddr
 );
 
-// Instantiate reg_init
-// Once done_btn pressed twice and reg_init tick received, send done tick
-
-
-localparam DEFAULT_IP = 32'h??;
+//169.254.80.10
+localparam DEFAULT_DEST_IP = 32'hA9FE500A;
 
 typedef enum logic [2:0] {
     s_first_hw,
@@ -32,17 +31,21 @@ always_ff @(posedge clk)
     done_btn_staged <= {done_btn_staged[0], done_btn};
 
 logic reg_done, reg_done_latched;
-always_ff @(posedge clk)
-    reg_done_latched <= reg_done_latched ? 1 : reg_done;
+always_ff @(posedge clk) begin
+    if (reset)
+        reg_done_latched <= 1'b0;
+    else if (reg_done)
+        reg_done_latched <= 1'b1;
+end
 
 assign init_done_tick = input_state==s_do_tick;
 
-always_ff @(posedge clk, posedge reset) begin
+always_ff @(posedge clk) begin
     if(reset) begin
         ipaddr <= 0;
         if(sw_i[0]) begin
-            ipaddr <= DEFAULT_IP;
-            input_state <= s_done;
+            ipaddr <= DEFAULT_DEST_IP;
+            input_state <= s_do_tick;
         end else begin
             ipaddr <= 0;
             input_state <= s_first_hw;
@@ -61,6 +64,8 @@ always_ff @(posedge clk, posedge reset) begin
                     input_state <= s_do_tick;
             s_do_tick:
                 input_state <= s_done;
+            s_done:
+                input_state <= s_done;
         endcase
 
         // Value to show on hex displays
@@ -69,6 +74,8 @@ always_ff @(posedge clk, posedge reset) begin
                 ipaddr <= {sw_i, ipaddr[15:0]};
             s_second_hw:
                 ipaddr <= {ipaddr[31:16], sw_i};
+            default:
+                ipaddr <= ipaddr;
         endcase
     end
 end

@@ -1,4 +1,6 @@
-// Provided for ECE 385 at the University of Illinois Urbana Champaign
+// Adapted from module provided for ECE 385 at the University of Illinois Urbana Champaign
+`timescale 1ns / 1ps
+
 module hex_driver (
     input   logic           clk,
     input   logic           reset,
@@ -11,26 +13,26 @@ module hex_driver (
     
     module nibble_to_hex(
         input   logic   [3:0]   nibble,
-        output  logic   [7:0]   hex
+        output  logic   [7:0]   hex_
     );
         always_comb begin
         case(nibble)
-            4'b0000 : hex = 8'b00111111; // '0'
-            4'b0001 : hex = 8'b00000110; // '1'
-            4'b0010 : hex = 8'b01011011; // '2'
-            4'b0011 : hex = 8'b01001111; // '3'
-            4'b0100 : hex = 8'b01100110; // '4'
-            4'b0101 : hex = 8'b01101101; // '5'
-            4'b0110 : hex = 8'b01111101; // '6'
-            4'b0111 : hex = 8'b00000111; // '7'
-            4'b1000 : hex = 8'b01111111; // '8'
-            4'b1001 : hex = 8'b01101111; // '9'
-            4'b1010 : hex = 8'b01110111; // 'A'
-            4'b1011 : hex = 8'b01111100; // 'b'
-            4'b1100 : hex = 8'b00111001; // 'C'
-            4'b1101 : hex = 8'b01011110; // 'd'
-            4'b1110 : hex = 8'b01111001; // 'E'
-            4'b1111 : hex = 8'b01110001; // 'F'
+            4'b0000 : hex_ = 8'b00111111; // '0'
+            4'b0001 : hex_ = 8'b00000110; // '1'
+            4'b0010 : hex_ = 8'b01011011; // '2'
+            4'b0011 : hex_ = 8'b01001111; // '3'
+            4'b0100 : hex_ = 8'b01100110; // '4'
+            4'b0101 : hex_ = 8'b01101101; // '5'
+            4'b0110 : hex_ = 8'b01111101; // '6'
+            4'b0111 : hex_ = 8'b00000111; // '7'
+            4'b1000 : hex_ = 8'b01111111; // '8'
+            4'b1001 : hex_ = 8'b01101111; // '9'
+            4'b1010 : hex_ = 8'b01110111; // 'A'
+            4'b1011 : hex_ = 8'b01111100; // 'b'
+            4'b1100 : hex_ = 8'b00111001; // 'C'
+            4'b1101 : hex_ = 8'b01011110; // 'd'
+            4'b1110 : hex_ = 8'b01111001; // 'E'
+            4'b1111 : hex_ = 8'b01110001; // 'F'
         endcase
         end
     endmodule
@@ -42,7 +44,7 @@ module hex_driver (
         for(i = 0; i < 8; i++) begin
             nibble_to_hex nibble_to_hex_(
                 .nibble(in[i]),
-                .hex(hex[i])
+                .hex_(hex[i])
             );
         end
     endgenerate

@@ -1,3 +1,5 @@
+`timescale 1ns / 1ps
+
 module receive(
     input sys_clk, reset,
 
@@ -6,7 +8,7 @@ module receive(
     output source_ready,
 
     output logic [16:0] buff_addr,
-    output logic [11:0] buff_din,
+    output logic [15:0] buff_din,
     output logic buff_en,
     output logic [1:0] buff_we
 );
@@ -16,7 +18,7 @@ localparam SHEIGHT = 240;
 
 localparam NUM_WORDS = SWIDTH * SHEIGHT;
 localparam PACKETS_PER_FRAME = 128;
-localparam WORDS_PER_PACKET = NUM_WORDS / PACKETS_PER_FRAME;//packets with frame headers are larger
+localparam [16:0] WORDS_PER_PACKET = NUM_WORDS / PACKETS_PER_FRAME;//packets with frame headers are larger
 
 typedef enum logic [4:0] {
     s_reset,
@@ -33,7 +35,7 @@ logic ready;
 assign source_ready = ready;
 
 logic [15:0] seq_num, seq_num_n;
-logic [31:0] word_num, word_num_n;
+logic [16:0] word_num, word_num_n;
 
 
 always_ff @(posedge reset or posedge sys_clk) begin
@@ -82,7 +84,7 @@ always_comb begin
                 state_n = s_data_hb;
                 buff_addr = seq_num * WORDS_PER_PACKET + word_num;
                 buff_en = 1;
-                buff_din = {4'b0, source_data[7:0]};
+                buff_din = {8'b0, source_data[7:0]};
                 buff_we = 2'b01;
             end
         end
@@ -91,7 +93,7 @@ always_comb begin
             if(source_valid) begin
                 buff_addr = seq_num * WORDS_PER_PACKET + word_num;
                 buff_en = 1;
-                buff_din = {source_data[3:0], 8'b0};
+                buff_din = {source_data[7:0], 8'b0};
                 buff_we = 2'b10;
 
                 if(source_last || word_num == WORDS_PER_PACKET - 1) begin

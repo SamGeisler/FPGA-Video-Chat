@@ -1,15 +1,8 @@
-//Debouncer circuit inspired by https://forum.digikey.com/t/debounce-logic-circuit-vhdl/12573
-//Also serves as a synchronizer for pushbutton and switch (asynchronous) inputs
-//Notice that this circuit behaves differently under simulation as it does when synthesized
-//so that simulation times are not unnecessarily long waiting for the debouncer circuits
+// Adapted from module provided for ECE 385 at the University of Illinois Urbana Champaign
+// Inspired by https://forum.digikey.com/t/debounce-logic-circuit-vhdl/12573
 
-`ifdef SYNTHESIS // Use big counter for synthesis
-localparam COUNTER_WIDTH = 15; 
-`else
-localparam COUNTER_WIDTH = 1;
-`endif
+`timescale 1ns / 1ps
 
-//synchronizer w/ debouncer (use for fpga button/switch)
 module sync_debounce (
 	input  logic Clk, 
 	input  logic d, 
@@ -17,7 +10,11 @@ module sync_debounce (
 	output logic q
 );
 
-	logic ff1, ff2;
+`ifdef SYNTHESIS 
+
+localparam COUNTER_WIDTH = 15; 
+
+logic ff1, ff2;
 	logic [COUNTER_WIDTH : 0] counter;
 	
 
@@ -36,5 +33,11 @@ module sync_debounce (
 	       counter <= '0; // reset counter when bounce detected
 	    end
 	end
+
+`else
+
+assign q = d;
+
+`endif
 
 endmodule

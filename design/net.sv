@@ -1,3 +1,5 @@
+`timescale 1ns / 1ps
+
 module net(
     input sys_clk, reset,
 
@@ -16,7 +18,7 @@ module net(
     output send_buff_en,
 
     output [16:0] recv_buff_addr,
-    output [11:0] recv_buff_din,
+    output [15:0] recv_buff_din,
     output recv_buff_en,
     output [1:0] recv_buff_we
 );

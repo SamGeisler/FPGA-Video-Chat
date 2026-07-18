@@ -1,3 +1,10 @@
+# Ignore all files without extensions (executables)
+src/*
+!src/*.*
+!src/*/
+!src/Makefile
+
+
 project/
 src/lib/
 src/include/

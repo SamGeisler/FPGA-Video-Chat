@@ -19,7 +19,7 @@ tx_slots: 8
 rx_slots: 8
 
 mac_address: 0x10e2d5000000
-ip_address: 192.168.1.50
+ip_address: 169.254.80.11
 
 udp_ports:
   video:

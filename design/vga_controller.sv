@@ -1,3 +1,5 @@
+`timescale 1ns / 1ps
+
 module vga_controller (
     input clk, reset,
     output hsync, vsync, active,
@@ -7,15 +9,15 @@ module vga_controller (
 logic [9:0] v_count, h_count;
 
 //Last cycle for each region
-localparam HDISP = 639;  // 640
-localparam HFRONT = 655; // 640 + 16
-localparam HPULSE = 751; // 640 + 16 + 96
-localparam HBACK = 799;  // 640 + 16 + 96 + 48
+localparam [9:0] HDISP = 639;  // 640
+localparam [9:0] HFRONT = 655; // 640 + 16
+localparam [9:0] HPULSE = 751; // 640 + 16 + 96
+localparam [9:0] HBACK = 799;  // 640 + 16 + 96 + 48
 
-localparam VDISP = 479;  // 480
-localparam VFRONT = 489; // 480 + 10
-localparam VPULSE = 491; // 480 + 10 + 2
-localparam VBACK = 520;  // 480 + 10 + 2 + 29 (compensates for 25 Mhz clock)
+localparam [9:0] VDISP = 479;  // 480
+localparam [9:0] VFRONT = 489; // 480 + 10
+localparam [9:0] VPULSE = 491; // 480 + 10 + 2
+localparam [9:0] VBACK = 520;  // 480 + 10 + 2 + 29 (compensates for 25 Mhz clock)
 
 assign hsync = (h_count <= HFRONT) || (h_count > HPULSE);
 assign vsync = (v_count <= VFRONT) || (v_count > VPULSE);

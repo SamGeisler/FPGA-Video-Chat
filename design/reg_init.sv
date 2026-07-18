@@ -1,19 +1,21 @@
+`timescale 1ns / 1ps
+
 module reg_init(
     input clk, reset,
     
-    input logic sda_in,
+    input sda_in,
 
     output logic init_done_tick,
                  sda_oe,
                  scl
 );
 
-localparam NUM_INIT_REGS = 11;
+localparam [16:0] NUM_INIT_REGS = 12;
 logic [15:0] inits[0:NUM_INIT_REGS-1]; // [addr, data]
 
 initial begin
-    inits[0] = 16'h12_04; //COM7
-    inits[1] = 16'h40_D0; //COM7
+    inits[0] = 16'h12_04;
+    inits[1] = 16'h40_D0;
     inits[2] = 16'h3A_04;
     inits[3] = 16'h13_00;
     inits[4] = 16'h10_FF;
@@ -41,12 +43,11 @@ typedef enum logic [4:0] {
 state_t state;
 
 localparam REG_WRITE = 0;
-localparam REG_READ = 1;
-logic [7:0] data_w, data_r, reg_addr;
+logic [7:0] data_w, reg_addr;
 logic start_tick, done_tick, rw;
 
 cam_i2c cam_i2c_i (.clk_100(clk), .reset, .trigger(start_tick), .rw, .reg_addr(reg_addr), .write_data(data_w),
-                       .read_data(data_r), .busy(), .done(done_tick), .scl, .sda_in, .sda_drive_low(sda_oe));
+                       .read_data(), .busy(), .done(done_tick), .scl, .sda_in, .sda_drive_low(sda_oe));
 
 
 always_ff @(posedge reset or posedge clk) begin

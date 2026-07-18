@@ -1,8 +1,10 @@
+Next: REGEN LITEETH MODULE (if necessary) with better IP, fix initalization (sw_i[0] not skipping), test (run configip.sh)
+
 Project stages (ordered by priority)
 
 Get system working on new hardware
 Update IP address system
-UDP/IP transmission with rudimantary (functional) testbench
+UDP/IP transmission with rudimentary (functional) testbench
 UDP/IP reception with rudimentary (functional) testbench
 Build out UDP/IP testbench to something sophisticated
 Get JPEG compression working in simulation (e.g. testbench that compresses .bmp to .jpeg) - modules designed around real time video streaming

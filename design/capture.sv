@@ -1,10 +1,10 @@
-module capture(
-    input logic clk_100, reset,
-    input logic [7:0] data,
-    input logic href, vsync,
-    input logic pclk,
+`timescale 1ns/ 1ps
 
-    input logic capture,
+module capture(
+    input clk_100, reset,
+    input [7:0] data,
+    input href, vsync,
+    input pclk,
 
     output logic [16:0] br_addra,
     output logic [15:0] br_dina,
@@ -12,9 +12,9 @@ module capture(
     output logic br_ena
 );
 
-localparam SWIDTH = 640;
-localparam SHEIGHT = 480;
-localparam MEMSZ = 76800;
+//Video downsampled to 240p
+localparam [9:0] STREAM_WIDTH = 640;
+localparam [9:0] STREAM_HEIGHT = 480;
 
 logic [9:0] h_count, h_count_n, v_count, v_count_n;
 
@@ -48,8 +48,7 @@ typedef enum logic [3:0] {
     s_read_b1,
     s_wait_rising_b2,
     s_read_b2,
-    s_wait_href_fall,
-    s_btn_released
+    s_wait_href_fall
 } state_t;
 
 state_t state, state_n;
@@ -77,8 +76,8 @@ always_ff @(posedge clk_100 or posedge reset) begin
 end
 
 
-logic [31:0] pixel_num;
-assign pixel_num = (   {v_count[9:1], 6'b0}*5   +  h_count[9:1]  );
+logic [16:0] pixel_num;
+assign pixel_num = (   {v_count[9:1], 6'b0}*3'd5   +  {6'd0, h_count[9:1]}  );
 
 always_comb begin
     //default values
@@ -137,10 +136,10 @@ always_comb begin
                 br_en_latch_n = 1;
             end
 
-            if(h_count == SWIDTH-1) begin
+            if(h_count == STREAM_WIDTH-1) begin
                 h_count_n = 0;
                 
-                if(v_count == SHEIGHT-1) begin
+                if(v_count == STREAM_HEIGHT-1) begin
                     v_count_n = 0;
                     state_n = s_reset;
                 end else begin
@@ -157,7 +156,8 @@ always_comb begin
             if(~href_sync[2])
                 state_n = s_wait_href;
         end
-
+        default: 
+            state_n = s_reset;
     endcase
 end
 

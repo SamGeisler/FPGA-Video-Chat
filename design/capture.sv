@@ -9,7 +9,9 @@ module capture(
     output logic [16:0] br_addra,
     output logic [15:0] br_dina,
     output logic [1:0] br_wea,
-    output logic br_ena
+    output logic br_ena,
+
+    output logic debug_bit
 );
 
 //Video downsampled to 240p
@@ -20,6 +22,8 @@ logic [9:0] h_count, h_count_n, v_count, v_count_n;
 
 logic [2:0] pclk_sync, href_sync, vsync_sync;
 logic [23:0] data_sync;
+
+logic debug_bit_n;
 
 always_ff @(posedge clk_100) begin
     pclk_sync <= {pclk_sync[1:0], pclk};
@@ -63,6 +67,8 @@ always_ff @(posedge clk_100 or posedge reset) begin
         br_din_latch <= 0;
         br_we_latch <= 0;
         br_en_latch <= 0;
+
+        debug_bit <= 0;
     end else begin
         state <= state_n;
         h_count <= h_count_n;
@@ -72,6 +78,8 @@ always_ff @(posedge clk_100 or posedge reset) begin
         br_din_latch <= br_din_latch_n;
         br_we_latch <= br_we_latch_n;
         br_en_latch <= br_en_latch_n;
+
+        debug_bit <= debug_bit_n;
     end
 end
 
@@ -89,6 +97,8 @@ always_comb begin
     br_din_latch_n = 0;
     br_we_latch_n = 0;
     br_en_latch_n = 0;
+
+    debug_bit_n = 0;
 
     case (state)
         s_reset: begin
@@ -134,6 +144,8 @@ always_comb begin
                 br_din_latch_n[7:0] = data_sync[23:16];
                 br_we_latch_n = 2'b01;
                 br_en_latch_n = 1;
+
+                debug_bit_n = (br_din_latch_n == 16'b0) ? 1 : 0;
             end
 
             if(h_count == STREAM_WIDTH-1) begin

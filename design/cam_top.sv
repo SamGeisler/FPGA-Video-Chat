@@ -11,6 +11,9 @@ module cam_top(
     output logic [7:0] hex_grid,
     output logic [7:0] hex_seg,
 
+    //LEDs
+    output debug_light,
+
     //Camera
     inout wire c_SDA,
     input c_PLK,
@@ -85,13 +88,13 @@ assign c_XLK = clk_25;
 blk_mem_gen_0 transmit_buf(.clka(clk_100), .clkb(clk_100), .ena(trans_ena), .wea(trans_wea),
                            .addra(trans_addra), .dina(trans_dina), .douta(),
                            .enb(trans_enb), .web(1'b0),
-                           .addrb(trans_addrb), .dinb(), .doutb(trans_doutb));
+                           .addrb(trans_addrb), .dinb(16'b0), .doutb(trans_doutb));
 
 // Receive buffer: Network -> buffer -> VGA
 blk_mem_gen_0 recv_buf(.clka(clk_100), .clkb(clk_100), .ena(recv_ena), .wea(recv_wea),
                            .addra(recv_addra), .dina(recv_dina), .douta(),
                            .enb(recv_enb), .web(1'b0),
-                           .addrb(recv_addrb), .dinb(), .doutb(recv_doutb));
+                           .addrb(recv_addrb), .dinb(16'b0), .doutb(recv_doutb));
 
 clk_wiz_0 clk_wiz_i(.reset(reset), .clk_in(clk_100), .clk_125(), .clk_50(clk_50_internal), .clk_25, .locked());
 
@@ -109,7 +112,7 @@ net net_i(.sys_clk(clk_100), .reset(init_reset), .rmii_clocks_ref_clk(clk_50_int
                      .recv_buff_din(recv_dina), .recv_buff_en(recv_ena), .recv_buff_we(recv_wea),
                      .ipaddr(selected_ip));
 
-capture capture_i(.data(c_D), .clk_100, .href(c_HS), .vsync(c_VS), .pclk(c_PLK), .br_addra(trans_addra), .br_dina(trans_dina), .br_ena(trans_ena), .br_wea(trans_wea), .reset(init_reset));
+capture capture_i(.data(c_D), .clk_100, .href(c_HS), .vsync(c_VS), .pclk(c_PLK), .br_addra(trans_addra), .br_dina(trans_dina), .br_ena(trans_ena), .br_wea(trans_wea), .reset(init_reset), .debug_bit(debug_light));
 
 logic sda_in, sda_oe;
 assign c_SDA = sda_oe ? 1'b0 : 1'bz;

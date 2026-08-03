@@ -9,22 +9,26 @@
 #include <errno.h>
 #include <time.h>
 #include <SDL3/SDL.h>
+#include <arpa/inet.h>
+
 
 #define PORT 5000
-#define WIDTH 320
-#define HEIGHT 240
+#define SWIDTH 320
+#define SHEIGHT 240
 #define BPP 2 // 16-bit RGB565 is 2 bytes per pixel
-#define FRAME_SIZE (WIDTH * HEIGHT * BPP)
+#define FRAME_SIZE (SWIDTH * SHEIGHT * BPP)
 #define BUFFER_SIZE 65536 // Max UDP datagram size
 
 #define PACKET_SIZE 1202
 #define PACKETS_PER_FRAME 128
 #define FRAME_TOUT_MS 750
 
-#define SWIDTH 640
-#define SHEIGHT 480
+
+#define TARGET_IP "169.254.80.10"
 
 typedef unsigned long long ull;
+
+void copy_convert(uint8_t* dest_rgb24, uint8_t* src_rgb16);
 
 ull curr_ms() {
     struct timespec ts;
@@ -70,8 +74,12 @@ int main(int argc, char** argv) {
 
     memset(&servaddr, 0, sizeof(servaddr));
     servaddr.sin_family = AF_INET;
-    servaddr.sin_addr.s_addr = INADDR_ANY;
     servaddr.sin_port = htons(PORT);
+
+    if (inet_pton(AF_INET, TARGET_IP, &servaddr.sin_addr) <= 0) {
+        fprintf(stderr, "Socket creation failed with error: %s\n", strerror(errno));
+        return 1;
+    }
 
     // Set socket to non-blocking
     int flags = fcntl(sockfd, F_GETFL, 0);
@@ -92,8 +100,13 @@ int main(int argc, char** argv) {
         return -1;
     }
 
-    uint16_t* draw_buf = (uint16_t*)malloc(WIDTH * HEIGHT * sizeof(uint16_t));
-    uint16_t* recv_frame_buf = (uint16_t*)malloc(WIDTH * HEIGHT * sizeof(uint16_t));
+    uint8_t* draw_buf = (uint8_t*)malloc(SWIDTH * SHEIGHT * 3 * sizeof(uint8_t));
+    uint8_t* recv_frame_buf = (uint8_t*)malloc(SWIDTH * SHEIGHT * 2 * sizeof(uint8_t));
+
+    if(!draw_buf || !recv_frame_buf){
+        printf("FAILED TO ALLOCATE BUFFERS\n");
+        return 1;
+    }
 
     SDL_Event e;
     int running = 1;
@@ -112,22 +125,19 @@ int main(int argc, char** argv) {
             goto render_frame;
         }
 
-        uint16_t seq_num = buffer[1];
-        if ((uint8_t*)recv_frame_buf + (seq_num * (PACKET_SIZE-2)) + PACKET_SIZE-2 > (uint8_t*)recv_frame_buf + WIDTH * HEIGHT * sizeof(uint16_t)) {
-            printf("seq_num - %d\n", seq_num);
-            continue;
-        }
-        memcpy((uint8_t*)recv_frame_buf + (seq_num * (PACKET_SIZE-2)), buffer+2, PACKET_SIZE-2);
+        uint16_t seq_num = ((uint16_t)buffer[0] << 8) + buffer[1];
+        printf("seq_num=%d\n",seq_num);
+
+        memcpy(recv_frame_buf + (seq_num * (PACKET_SIZE-2)), buffer+2, PACKET_SIZE-2);
 
         if (seq_num == PACKETS_PER_FRAME-1) {
-            memcpy((uint8_t*)draw_buf, (uint8_t*)recv_frame_buf, FRAME_SIZE);
+            copy_convert(draw_buf, recv_frame_buf);
             last_frame_time = curr_ms();
         } else if (curr_ms() - last_frame_time >= FRAME_TOUT_MS) {
             printf("FRAME TIMEOUT\n");
-            memcpy((uint8_t*)draw_buf, (uint8_t*)recv_frame_buf, FRAME_SIZE);
+            copy_convert(draw_buf, recv_frame_buf);
             last_frame_time = curr_ms();
         }
-
 
         render_frame:
         // Handle window events
@@ -153,4 +163,22 @@ int main(int argc, char** argv) {
     SDL_Quit();
 
     return 0;
+}
+
+void copy_convert(uint8_t* dest_rgb24, uint8_t* src_rgb16){
+    int b24 = 0;
+    int b16 = 0;
+    for(int i = 0; i < SWIDTH * SHEIGHT; i++){
+        //R
+        dest_rgb24[b24] = (src_rgb16[b16] & 0b11111000) >> 3;
+
+        //G
+        dest_rgb24[b24+1] = ((src_rgb16[b16] & 0b00000111) << 3)  +  ((src_rgb16[b16+1] & 0b11100000) >> 5);
+
+        //B
+        dest_rgb24[b24+2] = (src_rgb16[b16+1] & 0b00011111);
+        
+        b24 += 3;
+        b16 += 2;
+    }
 }

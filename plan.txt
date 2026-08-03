@@ -1,4 +1,4 @@
-Next: REGEN LITEETH MODULE (if necessary) with better IP, fix initalization (sw_i[0] not skipping), test (run configip.sh)
+Next: Fix initialization. Registers are messed up and the whole system isn't waiting for register configuration as it should - investigate
 
 Project stages (ordered by priority)
 

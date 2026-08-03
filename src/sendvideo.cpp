@@ -7,7 +7,7 @@
 
 #pragma comment(lib, "ws2_32.lib")
 
-#define DEST_IP "192.168.255.255"
+#define DEST_IP "169.254.80.11"
 #define DEST_PORT 5000
 #define WIDTH 320
 #define HEIGHT 240

@@ -65,7 +65,7 @@ always_ff @(posedge reset or posedge clk) begin
             end
             s_delay: begin
                 delay_counter <= delay_counter + 1;
-                if(delay_counter == 32'd10_000) begin
+                if(delay_counter == 32'd3_000_000) begin
                     state <= s_reg_write;
                 end
             end

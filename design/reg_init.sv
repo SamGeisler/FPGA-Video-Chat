@@ -10,22 +10,21 @@ module reg_init(
                  scl
 );
 
-localparam [16:0] NUM_INIT_REGS = 12;
+localparam [16:0] NUM_INIT_REGS = 11;
 logic [15:0] inits[0:NUM_INIT_REGS-1]; // [addr, data]
 
 initial begin
-    inits[0] = 16'h12_04;
-    inits[1] = 16'h40_D0;
-    inits[2] = 16'h3A_04;
-    inits[3] = 16'h13_00;
-    inits[4] = 16'h10_FF;
-    inits[5] = 16'h4F_C0;
-    inits[6] = 16'h50_20;
-    inits[7] = 16'h51_A0;
-    inits[8] = 16'h52_40;
-    inits[9] = 16'h53_50;
-    inits[10] = 16'h54_80;
-    inits[11] = 16'hb0_84;
+    inits[0] = 16'h12_04; // RGB mode
+    inits[1] = 16'h40_D0; // RGB565 mode
+    inits[2] = 16'h3A_05; // Change YUV order (?)
+    inits[3] = 16'hb0_84; // Magically improves color (from internet)
+    inits[4] = 16'h4F_96; // Matrix Coefficients
+    inits[5] = 16'h50_83;
+    inits[6] = 16'h51_00;
+    inits[7] = 16'h52_3d;
+    inits[8] = 16'h53_a7;
+    inits[9] = 16'h54_c8;
+    inits[10] = 16'h58_1a;
 end
 
 logic [31:0] delay_counter;
@@ -65,7 +64,7 @@ always_ff @(posedge reset or posedge clk) begin
             end
             s_delay: begin
                 delay_counter <= delay_counter + 1;
-                if(delay_counter == 32'd3_000_000) begin
+                if(delay_counter == 32'd500_000) begin
                     state <= s_reg_write;
                 end
             end

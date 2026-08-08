@@ -15,12 +15,7 @@ set_property -dict { PACKAGE_PIN M17 IOSTANDARD LVCMOS33 } [get_ports setup_btn]
 #[reset] [   ] [setup]
 #        [   ]
 
-#LEDs
-set_property -dict { PACKAGE_PIN H17 IOSTANDARD LVCMOS33 } [get_ports debug_light]
-
-
 #PHY Signals
-set_property -dict { PACKAGE_PIN B8 IOSTANDARD LVCMOS33 } [get_ports rmii_clocks_ref_clk]
 set_property -dict { PACKAGE_PIN D5 IOSTANDARD LVCMOS33 } [get_ports rmii_clk_in]
 set_property -dict { PACKAGE_PIN D9 IOSTANDARD LVCMOS33 } [get_ports rmii_crs_dv]
 set_property -dict { PACKAGE_PIN C9 IOSTANDARD LVCMOS33 } [get_ports rmii_mdc]
@@ -34,11 +29,11 @@ set_property -dict { PACKAGE_PIN A8 IOSTANDARD LVCMOS33 } [get_ports {rmii_tx_da
 
 #Camera Signals
 set_property -dict { PACKAGE_PIN G3 IOSTANDARD LVCMOS33 PULLTYPE PULLUP } [get_ports c_SDA]
-set_property -dict { PACKAGE_PIN F3 IOSTANDARD LVCMOS33 PULLTYPE PULLUP } [get_ports c_SCL]
+set_property -dict { PACKAGE_PIN F3 IOSTANDARD LVCMOS33 } [get_ports c_SCL]
 set_property -dict { PACKAGE_PIN G1 IOSTANDARD LVCMOS33 } [get_ports c_HS]
 set_property -dict { PACKAGE_PIN G2 IOSTANDARD LVCMOS33 } [get_ports c_VS]
 set_property -dict { PACKAGE_PIN H1 IOSTANDARD LVCMOS33 } [get_ports c_XLK]
-set_property -dict { PACKAGE_PIN G4 IOSTANDARD LVCMOS33 } [get_ports c_PLK]
+set_property -dict { PACKAGE_PIN H16 IOSTANDARD LVCMOS33 } [get_ports c_PLK]
 set_property -dict { PACKAGE_PIN H4 IOSTANDARD LVCMOS33 } [get_ports { c_D[6] }]
 set_property -dict { PACKAGE_PIN H2 IOSTANDARD LVCMOS33 } [get_ports { c_D[7] }]
 set_property -dict { PACKAGE_PIN G6 IOSTANDARD LVCMOS33 } [get_ports { c_D[4] }]

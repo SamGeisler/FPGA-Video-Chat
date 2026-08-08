@@ -1,6 +1,6 @@
 `timescale 1ns/ 1ps
 
-module cam_top(
+module top (
     input clk_100, reset,
 
     //Control inputs
@@ -10,9 +10,6 @@ module cam_top(
     //Seven segment displays
     output logic [7:0] hex_grid,
     output logic [7:0] hex_seg,
-
-    //LEDs
-    output debug_light,
 
     //Camera
     inout wire c_SDA,
@@ -75,23 +72,19 @@ logic recv_enb;
 //timing signals
 logic clk_25, clk_50_internal;
 
-//Internal vga signals
-logic [9:0] VGA_drawX, VGA_drawY;
-logic VGA_active;
-
 //Camera signal assignments
 assign c_RET = ~reset;
 assign c_PWDN = 0;
 assign c_XLK = clk_25;
 
 // Transmit buffer: camera -> buffer -> network transmission
-blk_mem_gen_0 transmit_buf(.clka(clk_100), .clkb(clk_100), .ena(trans_ena), .wea(trans_wea),
+blk_mem_gen_0 transmit_buf(.clka(c_PLK), .clkb(clk_100), .ena(trans_ena), .wea(trans_wea),
                            .addra(trans_addra), .dina(trans_dina), .douta(),
                            .enb(trans_enb), .web(1'b0),
                            .addrb(trans_addrb), .dinb(16'b0), .doutb(trans_doutb));
 
 // Receive buffer: Network -> buffer -> VGA
-blk_mem_gen_0 recv_buf(.clka(clk_100), .clkb(clk_100), .ena(recv_ena), .wea(recv_wea),
+blk_mem_gen_0 recv_buf(.clka(clk_100), .clkb(clk_25), .ena(recv_ena), .wea(recv_wea),
                            .addra(recv_addra), .dina(recv_dina), .douta(),
                            .enb(recv_enb), .web(1'b0),
                            .addrb(recv_addrb), .dinb(16'b0), .doutb(recv_doutb));
@@ -102,23 +95,23 @@ ODDR #(.DDR_CLK_EDGE("OPPOSITE_EDGE"), .INIT(1'b0), .SRTYPE("SYNC")) rmii_clk_fo
     (.Q(rmii_clk_in), .C(clk_50_internal), 
      .CE(1'b1), .D1(1'b1), .D2(1'b0), .R(1'b0), .S(1'b0));
 
-vga_controller vga_i(.clk(clk_25), .reset(init_reset), .hsync(VGA_HS), .vsync(VGA_VS), .active(VGA_active), .pixel_x(VGA_drawX), .pixel_y(VGA_drawY));
+vga_controller vga_i(.clk(clk_25), .reset(init_reset), .hsync(VGA_HS), .vsync(VGA_VS), .br_addrb(recv_addrb), .br_doutb(recv_doutb), .br_enb(recv_enb), .R(VGA_R), .G(VGA_G), .B(VGA_B));
 
-color_map cmap_i(.active(VGA_active), .drawX(VGA_drawX), .drawY(VGA_drawY), .br_addrb(recv_addrb), .br_doutb(recv_doutb), .br_enb(recv_enb), .R(VGA_R), .G(VGA_G), .B(VGA_B));
+logic [15:0] received_data;
+logic received_valid;
 
 net net_i(.sys_clk(clk_100), .reset(init_reset), .rmii_clocks_ref_clk(clk_50_internal), .rmii_crs_dv, .rmii_mdc, .rmii_mdio,
                      .rmii_rx_data, .rmii_tx_data, .rmii_tx_en, .send_buff_addr(trans_addrb),
-                     .send_buff_dout(trans_doutb), .send_buff_en(trans_enb), .recv_buff_addr(recv_addra),
-                     .recv_buff_din(recv_dina), .recv_buff_en(recv_ena), .recv_buff_we(recv_wea),
-                     .ipaddr(selected_ip));
+                     .send_buff_dout(trans_doutb), .send_buff_en(trans_enb), .ipaddr(selected_ip),
+                     .recv_buff_addr(recv_addra), .recv_buff_din(recv_dina), .recv_buff_en(recv_ena), .recv_buff_we(recv_wea));
 
-capture capture_i(.data(c_D), .clk_100, .href(c_HS), .vsync(c_VS), .pclk(c_PLK), .br_addra(trans_addra), .br_dina(trans_dina), .br_ena(trans_ena), .br_wea(trans_wea), .reset(init_reset), .debug_bit(debug_light));
+capture capture_i(.data(c_D), .href(c_HS), .vsync(c_VS), .pclk(c_PLK), .br_addra(trans_addra), .br_dina(trans_dina), .br_ena(trans_ena), .br_wea(trans_wea), .reset(init_reset));
 
 logic sda_in, sda_oe;
 assign c_SDA = sda_oe ? 1'b0 : 1'bz;
 assign sda_in = c_SDA;
 
-init init_i(.clk(clk_100), .reset, .sda_in, .sda_oe, .init_done_tick, .scl(c_SCL), .ipaddr(selected_ip), .done_btn(setup_btn_db), .sw_i);
+init init_i(.clk(clk_100), .reset, .sda_in, .sda_oe, .scl(c_SCL), .init_done_tick, .done_btn(setup_btn_db), .sw_i, .ipaddr(selected_ip));
 
 always_ff @(posedge clk_100) begin
     if(reset)

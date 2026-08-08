@@ -169,14 +169,18 @@ void copy_convert(uint8_t* dest_rgb24, uint8_t* src_rgb16){
     int b24 = 0;
     int b16 = 0;
     for(int i = 0; i < SWIDTH * SHEIGHT; i++){
+        // The first byte received is the low byte, the second is the high byte
+        uint8_t low_byte = src_rgb16[b16];
+        uint8_t high_byte = src_rgb16[b16+1];
+
         //R
-        dest_rgb24[b24] = (src_rgb16[b16] & 0b11111000) >> 3;
+        dest_rgb24[b24] = (high_byte & 0b11111000);
 
         //G
-        dest_rgb24[b24+1] = ((src_rgb16[b16] & 0b00000111) << 3)  +  ((src_rgb16[b16+1] & 0b11100000) >> 5);
+        dest_rgb24[b24+1] = ((high_byte & 0b00000111) << 5)  +  ((low_byte & 0b11100000) >> 3);
 
         //B
-        dest_rgb24[b24+2] = (src_rgb16[b16+1] & 0b00011111);
+        dest_rgb24[b24+2] = (low_byte & 0b00011111) << 3;
         
         b24 += 3;
         b16 += 2;

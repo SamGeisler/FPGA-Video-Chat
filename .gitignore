@@ -10,3 +10,5 @@ src/lib/
 src/include/
 design/liteeth_core.v
 dsp-demo/__pycache__/
+
+.slang/

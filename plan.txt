@@ -1,19 +1,9 @@
-Next: Fix initialization. Registers are messed up and the whole system isn't waiting for register configuration as it should - investigate
-
-Project stages (ordered by priority)
-
-Get system working on new hardware
-Update IP address system
-UDP/IP transmission with rudimentary (functional) testbench
-UDP/IP reception with rudimentary (functional) testbench
-Build out UDP/IP testbench to something sophisticated
-Get JPEG compression working in simulation (e.g. testbench that compresses .bmp to .jpeg) - modules designed around real time video streaming
-MJPEG transmission and software decoding
-MJPEG reception and hardware decoding. Build out testbench if necessary
-RTP packetization
-Implement TCP on 391 OS
-Sophisticated top-level testbench
-Replace block ram with DDR
-
-
-Everything subject to change
+TODO:
+DONE - Redo camera signal capture
+DONE - Get a good image from camera
+- Get video reception working again
+- Build ARP routine
+- Build UDP/IP packetizer
+- Implement some verification
+- Switch to DDR2 and switch to 640x480
+- Test and measure speeds

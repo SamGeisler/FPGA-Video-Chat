@@ -1,9 +1,10 @@
 TODO:
 DONE - Redo camera signal capture
 DONE - Get a good image from camera
-- Get video reception working again
+DONE - Get video reception working again
 - Build ARP routine
 - Build UDP/IP packetizer
 - Implement some verification
 - Switch to DDR2 and switch to 640x480
+- Modify design to meet timing
 - Test and measure speeds

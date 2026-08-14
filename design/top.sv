@@ -11,6 +11,9 @@ module top (
     output logic [7:0] hex_grid,
     output logic [7:0] hex_seg,
 
+    //LEDs
+    output debug_led,
+
     //Camera
     inout wire c_SDA,
     input c_PLK,
@@ -80,12 +83,12 @@ assign c_XLK = clk_25;
 // Transmit buffer: camera -> buffer -> network transmission
 blk_mem_gen_0 transmit_buf(.clka(c_PLK), .clkb(clk_100), .ena(trans_ena), .wea(trans_wea),
                            .addra(trans_addra), .dina(trans_dina), .douta(),
-                           .enb(trans_enb), .web(1'b0),
-                           .addrb(trans_addrb), .dinb(16'b0), .doutb(trans_doutb));
+                           .enb(1'b0), .web(0),
+                           .addrb(17'b0), .dinb(16'b0), .doutb());
 
 // Receive buffer: Network -> buffer -> VGA
-blk_mem_gen_0 recv_buf(.clka(clk_100), .clkb(clk_25), .ena(recv_ena), .wea(recv_wea),
-                           .addra(recv_addra), .dina(recv_dina), .douta(),
+blk_mem_gen_0 recv_buf(.clka(clk_100), .clkb(clk_25), .ena(1'b0), .wea(0),
+                           .addra(17'b0), .dina(16'b0), .douta(),
                            .enb(recv_enb), .web(1'b0),
                            .addrb(recv_addrb), .dinb(16'b0), .doutb(recv_doutb));
 
@@ -101,9 +104,7 @@ logic [15:0] received_data;
 logic received_valid;
 
 net net_i(.sys_clk(clk_100), .reset(init_reset), .rmii_clocks_ref_clk(clk_50_internal), .rmii_crs_dv, .rmii_mdc, .rmii_mdio,
-                     .rmii_rx_data, .rmii_tx_data, .rmii_tx_en, .send_buff_addr(trans_addrb),
-                     .send_buff_dout(trans_doutb), .send_buff_en(trans_enb), .ipaddr(selected_ip),
-                     .recv_buff_addr(recv_addra), .recv_buff_din(recv_dina), .recv_buff_en(recv_ena), .recv_buff_we(recv_wea));
+          .rmii_rx_data, .rmii_tx_data, .rmii_tx_en, .test_successful(debug_led));
 
 capture capture_i(.data(c_D), .href(c_HS), .vsync(c_VS), .pclk(c_PLK), .br_addra(trans_addra), .br_dina(trans_dina), .br_ena(trans_ena), .br_wea(trans_wea), .reset(init_reset));
 

@@ -99,3 +99,6 @@ set_property -dict { PACKAGE_PIN P15 IOSTANDARD LVCMOS33 } [get_ports { hex_seg[
 set_property -dict { PACKAGE_PIN T11 IOSTANDARD LVCMOS33 } [get_ports { hex_seg[5] }]
 set_property -dict { PACKAGE_PIN L18 IOSTANDARD LVCMOS33 } [get_ports { hex_seg[6] }]
 set_property -dict { PACKAGE_PIN H15 IOSTANDARD LVCMOS33 } [get_ports { hex_seg[7] }]
+
+#LEDs
+set_property -dict { PACKAGE_PIN H17 IOSTANDARD LVCMOS33 } [get_ports debug_led]

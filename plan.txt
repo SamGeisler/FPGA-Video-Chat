@@ -1,10 +1,12 @@
+NEXT: Generate new liteeth module and test ARP request
+
 TODO:
 DONE - Redo camera signal capture
 DONE - Get a good image from camera
 DONE - Get video reception working again
-- Build ARP routine
-- Build UDP/IP packetizer
+DONE - Get basic ARP routine working
+- Build out full system with custom network-layer stack
 - Implement some verification
-- Switch to DDR2 and switch to 640x480
+- Switch to DDR2 and to 640x480
 - Modify design to meet timing
 - Test and measure speeds

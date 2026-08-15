@@ -1,5 +1,3 @@
-NEXT: Generate new liteeth module and test ARP request
-
 TODO:
 DONE - Redo camera signal capture
 DONE - Get a good image from camera

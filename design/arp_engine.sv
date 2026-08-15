@@ -1,5 +1,8 @@
-module arp_req (
+`timescale 1ns / 1ps
+module arp_engine (
     input clk, reset,
+
+    //TODO: CHANGE DIRECTION OF EVERYTHING
 
     output logic [7:0] sink_data,
     output logic sink_last,
@@ -14,7 +17,7 @@ module arp_req (
     output logic [47:0] addr,
     output logic addr_valid
 );
-
+          
 localparam [15:0] HW_TYPE = 16'd1;
 localparam [15:0] PROTOCOL_TYPE = 16'h0800;
 localparam [7:0] HW_LEN = 8'd6;

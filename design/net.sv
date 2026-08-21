@@ -173,7 +173,7 @@ packetizer packetizer_i(
 transmit transmit_i(
     .clk, .reset,
 
-    .source_data(trasnmit_source_data), .source_last(trans_source_last),
+    .source_data(trans_source_data), .source_last(trans_source_last),
     .source_ready(trans_source_ready), .siourcevalid(trans_source_valid)
 );
 

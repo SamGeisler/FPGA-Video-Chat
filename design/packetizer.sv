@@ -13,7 +13,7 @@ module packetizer(
         Checksum calculation, but not header transmission, can be performed while another packet is being transmitted.
     */
     input logic start_packet, 
-    input logic [15:0] total_len,
+    input logic [15:0] data_len,
 
     input logic [7:0] sink_data,
     input logic sink_valid,
@@ -42,12 +42,11 @@ localparam [31:0] IP_SRC_ADDR = 32'hA9_FE_50_0B; //169.254.80.11
 localparam [31:0] IP_DEST_ADDR = 32'hA9_FE_50_0A; //169.254.80.10
 
 localparam [15:0] IP_HEADER_CHECKSUM_P1 = {IP_VERSION, IP_HEADER_LEN, IP_DSCP, IP_ECN};
-localparam [15:0] IP_HEADER_CHECKSUM_P2 = ?; // TBD
+localparam [15:0] IP_HEADER_CHECKSUM_P2 = 16'h3824; // TBD
 
 
-localparam [15:0] UDP_SRC_PORT = ?;
-localparam [15:0] UDP_DEST_PORT = ?;
-localparam [15:0] UDP_LEN = ?;// TODO discriminate and translate between different lengths
+localparam [15:0] UDP_SRC_PORT = 5000;
+localparam [15:0] UDP_DEST_PORT = 5000;
 localparam [15:0] UDP_CHECKSUM = 0; // Unused
 
 
@@ -82,7 +81,7 @@ always_ff @(posedge clk) begin
         checksum_calc_stage <= 0;
         running_checksum <= 0;
     end else begin
-        if(state == s_transmit_header) begin
+        if(state != s_transmit_ip_header && state != s_transmit_udp_header) begin
             if(header_byte_counter == IP_HEADER_LEN_BYTES-1) 
                 start_packet_latched <= 0;
             else
@@ -91,19 +90,19 @@ always_ff @(posedge clk) begin
             start_packet_latched <= start_packet;
 
 
-        if(start_packet && ~start_packet_latched && state != s_transmit_header) begin
-            total_len_latched <= total_len;
+        if(start_packet && ~start_packet_latched) begin
+            total_len_latched <= data_len + IP_HEADER_LEN_BYTES + UDP_HEADER_LEN_BYTES;
             running_checksum <= IP_HEADER_CHECKSUM_P1;
 
             checksum_calc_stage <= 1;
         end else if(checksum_calc_stage == 1) begin
             checksum_temp = running_checksum + total_len_latched;
-            running_checksum = checksum_temp[15:0] + {15'b0, checksum_temp[0]};
+            running_checksum <= checksum_temp[15:0] + {15'b0, checksum_temp[0]};
 
             checksum_calc_stage <= 2;
         end else if(checksum_calc_stage == 2) begin
             checksum_temp = running_checksum + IP_HEADER_CHECKSUM_P2;
-            running_checksum = ~{checksum_temp[15:0] + {15'b0, checksum_temp[0]}};
+            running_checksum <= ~{checksum_temp[15:0] + {15'b0, checksum_temp[0]}};
 
             checksum_calc_stage <= 3;
         end
@@ -137,7 +136,7 @@ always_comb begin
 
         s_idle: begin
             if(start_packet_latched) begin
-                state_n = s_transmit_header;
+                state_n = s_transmit_ip_header;
                 header_byte_counter_n = 0;
             end
         end
@@ -170,7 +169,7 @@ always_comb begin
 
             if(source_ready) begin
                 if(header_byte_counter == IP_HEADER_LEN_BYTES-1) begin
-                    state_n = s_transmit_data;
+                    state_n = s_transmit_udp_header;
                     header_byte_counter_n = 0;
                 end else 
                     header_byte_counter_n = header_byte_counter + 1;
@@ -185,12 +184,11 @@ always_comb begin
                 1: source_data = UDP_SRC_PORT[7:0];
                 2: source_data = UDP_DEST_PORT[15:8];
                 3: source_data = UDP_DEST_PORT[7:0];
-                4: source_data = ?
-                5: source_data = ?
+                4: source_data = {total_len_latched - IP_HEADER_LEN_BYTES}[15:8];
+                5: source_data = {total_len_latched - IP_HEADER_LEN_BYTES}[7:0];
                 6: source_data = UDP_CHECKSUM[15:8];
                 7: source_data = UDP_CHECKSUM[7:0];
             endcase
-
 
             if(source_ready) begin
                 if(header_byte_counter == UDP_HEADER_LEN_BYTES-1) begin
@@ -201,7 +199,13 @@ always_comb begin
         end
 
         s_transmit_data: begin
-            
+            source_valid = sink_valid;
+            source_data = sink_data;
+            source_last = sink_last;
+            sink_ready = source_ready;
+
+            if(source_last)
+                state_n = s_idle;
         end
 
     endcase

@@ -15,8 +15,8 @@ module net(
 localparam [15:0] ARP_ETH_TYPE = 16'h0806;
 localparam [15:0] IPV4_ETH_TYPE = 16'h0800;
 
-logic [47:0] arped_addr;
-logic arped_addr_valid;
+logic [47:0] arp_reply_target, arp_resolved_addr;
+logic arp_resolved_addr_valid, arp_replying;
 
 //liteeth module
 logic [7:0] mac_source_data, mac_sink_data;
@@ -29,10 +29,13 @@ logic arp_source_ready, arp_source_valid, arp_source_last, arp_sink_ready, arp_s
 
 logic [7:0] ip_source_data, ip_sink_data;
 logic ip_source_ready, ip_source_valid, ip_source_last, ip_sink_ready, ip_sink_valid, ip_sink_last;
+logic packetizer_start_packet;
+logic [15:0] packetizer_data_len;
+
 
 //Payload data processing modules
 logic [7:0] trans_source_data;
-logic trans_source_ready, trans_source_valid, trans_source_last, trans_sink_ready;
+logic trans_source_ready, trans_source_valid, trans_source_last;
 
 logic [7:0] recv_sink_data;
 logic recv_sink_ready, recv_sink_valid, recv_sink_last;
@@ -53,17 +56,17 @@ always_ff @(posedge clk) begin
     end else begin
         case(transmit_state)
             s_transmit_none: begin
-                if(arp_source_ready)
+                if(arp_source_valid)
                     transmit_state <= s_transmit_arp;
-                else if(ip_source_ready && arped_addr_valid == 1)
+                else if(ip_source_valid && arp_resolved_addr_valid == 1)
                     transmit_state <= s_transmit_ip;
             end
             s_transmit_arp: begin
-                if(arp_source_last)
+                if(arp_source_last && arp_source_valid && mac_sink_ready)
                     transmit_state <= s_transmit_none;
             end
             s_transmit_ip: begin
-                if(ip_source_last)
+                if(ip_source_last && ip_source_valid && mac_sink_ready)
                     transmit_state <= s_transmit_none;
             end
         endcase 
@@ -73,8 +76,8 @@ end
 
 logic mac_source_cs_arp, mac_source_cs_ip;
 
-assign arp_cs = mac_source_ready && mac_source_ethernet_type == ARP_ETH_TYPE;
-assign ip_cs = mac_source_ready && mac_source_ethernet_type == IPV4_ETH_TYPE;
+assign mac_source_cs_arp = mac_source_valid && mac_source_ethernet_type == ARP_ETH_TYPE;
+assign mac_source_cs_ip = mac_source_valid && mac_source_ethernet_type == IPV4_ETH_TYPE;
 
 //liteeth source multiplexer
 always_comb begin
@@ -83,11 +86,21 @@ always_comb begin
         arp_sink_last = mac_source_last;
         arp_sink_valid = mac_source_valid;
         mac_source_ready = arp_sink_ready;
+
+        ip_sink_data = 8'b0;
+        ip_sink_last = 1'b0;
+        ip_sink_valid = 1'b0;
+
     end else if(mac_source_cs_ip) begin
         ip_sink_data = mac_source_data;
         ip_sink_last = mac_source_last;
         ip_sink_valid = mac_source_valid;
         mac_source_ready = ip_sink_ready;
+
+        arp_sink_data = 8'b0;
+        arp_sink_last = 1'b0;
+        arp_sink_valid = 1'b0;
+
     end else begin
         arp_sink_data = 8'b0;
         arp_sink_last = 1'b0;
@@ -97,14 +110,14 @@ always_comb begin
         ip_sink_last = 1'b0;
         ip_sink_valid = 1'b0;
 
-        mac_source_ready = 1'b0;
+        mac_source_ready = 1'b1; // If unhandled ethernet type, chew the frame
     end
 end
 
 //liteeth sink multiplexer
 always_comb begin
     case(transmit_state)
-        s_transmit_none: begin
+        default: begin
             mac_sink_data = 8'b0;
             mac_sink_last = 1'b0;
             mac_sink_valid = 1'b0;
@@ -134,6 +147,18 @@ always_comb begin
     endcase
 end
 
+logic [47:0] video_sink_target_mac;
+always_comb begin
+    case (transmit_state)
+    s_transmit_ip:
+        video_sink_target_mac = arp_resolved_addr;
+    s_transmit_arp:
+        video_sink_target_mac = arp_replying ? arp_reply_target : 48'hFF_FF_FF_FF_FF_FF;
+    default:
+        video_sink_target_mac = 48'hFF_FF_FF_FF_FF_FF;
+    endcase
+end
+
 liteeth_core liteeth_core_i(
     .sys_clock(clk), .sys_reset(reset),
 
@@ -141,7 +166,7 @@ liteeth_core liteeth_core_i(
 
     .video_sink_data(mac_sink_data), .video_sink_last(mac_sink_last), .video_sink_valid(mac_sink_valid), 
     .video_sink_ready(mac_sink_ready), .video_sink_ethernet_type(mac_sink_ethernet_type), .video_sink_last_be(1'b1), 
-    .video_sink_target_mac(arped_addr_valid ? arped_addr : 48'hFF_FF_FF_FF_FF_FF),
+    .video_sink_target_mac,
 
     .video_source_data(mac_source_data), .video_source_error(), .video_source_last(mac_source_last), 
     .video_source_ready(mac_source_ready), .video_source_valid(mac_source_valid), .video_source_last_be(), 
@@ -157,7 +182,8 @@ arp_engine arp_engine_i(
     .source_data(arp_source_data), .source_last(arp_source_last),
     .source_ready(arp_source_ready), .source_valid(arp_source_valid),
 
-    .addr(arped_addr), .addr_valid(arped_addr_valid)
+    .resolved_addr(arp_resolved_addr), .reply_target(arp_reply_target),
+    .resolved_addr_valid(arp_resolved_addr_valid), .replying(arp_replying)
 );
 
 packetizer packetizer_i(
@@ -167,14 +193,18 @@ packetizer packetizer_i(
     .source_ready(ip_source_ready), .source_valid(ip_source_valid),
 
     .sink_data(trans_source_data), .sink_last(trans_source_last),
-    .sink_ready(trans_source_ready), .sink_valid(trans_source_valid)
+    .sink_ready(trans_source_ready), .sink_valid(trans_source_valid),
+
+    .start_packet(packetizer_start_packet), .data_len(packetizer_data_len)
 );
 
 transmit transmit_i(
     .clk, .reset,
 
     .source_data(trans_source_data), .source_last(trans_source_last),
-    .source_ready(trans_source_ready), .siourcevalid(trans_source_valid)
+    .source_ready(trans_source_ready), .source_valid(trans_source_valid),
+
+    .start_packet(packetizer_start_packet), .data_len(packetizer_data_len)
 );
 
 depacketizer depacketizer_i(

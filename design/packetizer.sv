@@ -11,6 +11,9 @@ module packetizer(
         Total_len is interpreted as valid (and latched) on the rising edge of start_packet
 
         Checksum calculation, but not header transmission, can be performed while another packet is being transmitted.
+
+        Only a single packet can be queued at once. If the transmitter attempts to assert start_packet for the second
+        time before the first time is processed, that second time will be ignored.
     */
     input logic start_packet, 
     input logic [15:0] data_len,
@@ -38,12 +41,11 @@ localparam [2:0] IP_FLAGS = 3'b010; // [Reserved, Don't fragment, More Fragments
 localparam [12:0] IP_FRAGMENT_OFFSET = 0; // Unused
 localparam [7:0] IP_TTL = 4;
 localparam [7:0] IP_PROTOCOL = 17; //UDP
-localparam [31:0] IP_SRC_ADDR = 32'hA9_FE_50_0B; //169.254.80.11
-localparam [31:0] IP_DEST_ADDR = 32'hA9_FE_50_0A; //169.254.80.10
+localparam [31:0] THIS_IP = 32'hA9_FE_50_0B; //169.254.80.11
+localparam [31:0] OTHER_IP = 32'hA9_FE_50_0A; //169.254.80.10
 
 localparam [15:0] IP_HEADER_CHECKSUM_P1 = {IP_VERSION, IP_HEADER_LEN, IP_DSCP, IP_ECN};
-localparam [15:0] IP_HEADER_CHECKSUM_P2 = 16'h3824; // TBD
-
+localparam [15:0] IP_HEADER_CHECKSUM_P2 = 16'h3824;
 
 localparam [15:0] UDP_SRC_PORT = 5000;
 localparam [15:0] UDP_DEST_PORT = 5000;
@@ -81,13 +83,13 @@ always_ff @(posedge clk) begin
         checksum_calc_stage <= 0;
         running_checksum <= 0;
     end else begin
-        if(state != s_transmit_ip_header && state != s_transmit_udp_header) begin
+        if(state == s_transmit_ip_header || state == s_transmit_udp_header) begin
             if(header_byte_counter == IP_HEADER_LEN_BYTES-1) 
                 start_packet_latched <= 0;
             else
                 start_packet_latched <= start_packet_latched;
         end else 
-            start_packet_latched <= start_packet;
+            start_packet_latched <= start_packet_latched ? 1'b1 : start_packet;
 
 
         if(start_packet && ~start_packet_latched) begin
@@ -97,12 +99,12 @@ always_ff @(posedge clk) begin
             checksum_calc_stage <= 1;
         end else if(checksum_calc_stage == 1) begin
             checksum_temp = running_checksum + total_len_latched;
-            running_checksum <= checksum_temp[15:0] + {15'b0, checksum_temp[0]};
+            running_checksum <= checksum_temp[15:0] + {15'b0, checksum_temp[16]};
 
             checksum_calc_stage <= 2;
         end else if(checksum_calc_stage == 2) begin
             checksum_temp = running_checksum + IP_HEADER_CHECKSUM_P2;
-            running_checksum <= ~{checksum_temp[15:0] + {15'b0, checksum_temp[0]}};
+            running_checksum <= ~{checksum_temp[15:0] + {15'b0, checksum_temp[16]}};
 
             checksum_calc_stage <= 3;
         end
@@ -157,14 +159,14 @@ always_comb begin
                 9: source_data = IP_PROTOCOL;
                 10: source_data = running_checksum[15:8];
                 11: source_data = running_checksum[7:0];
-                12: source_data = IP_SRC_ADDR[31:24];
-                13: source_data = IP_SRC_ADDR[23:16];
-                14: source_data = IP_SRC_ADDR[15:8];
-                15: source_data = IP_SRC_ADDR[7:0];
-                16: source_data = IP_DEST_ADDR[31:24];
-                17: source_data = IP_DEST_ADDR[23:16];
-                18: source_data = IP_DEST_ADDR[15:8];
-                19: source_data = IP_DEST_ADDR[7:0];
+                12: source_data = THIS_IP[31:24];
+                13: source_data = THIS_IP[23:16];
+                14: source_data = THIS_IP[15:8];
+                15: source_data = THIS_IP[7:0];
+                16: source_data = OTHER_IP[31:24];
+                17: source_data = OTHER_IP[23:16];
+                18: source_data = OTHER_IP[15:8];
+                19: source_data = OTHER_IP[7:0];
             endcase
 
             if(source_ready) begin
@@ -204,7 +206,7 @@ always_comb begin
             source_last = sink_last;
             sink_ready = source_ready;
 
-            if(source_last)
+            if(sink_valid && sink_last && source_ready)
                 state_n = s_idle;
         end
 

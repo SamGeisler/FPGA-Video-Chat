@@ -1,10 +1,22 @@
-TODO:
+TODO: Fix transmit and receive, and finish UDP/IP stack implementation!
 DONE - Redo camera signal capture
 DONE - Get a good image from camera
 DONE - Get video reception working again
 DONE - Get basic ARP routine working
 - Build out full system with custom network-layer stack
-- Implement some verification
+- Write testbenches
 - Switch to DDR2 and to 640x480
 - Modify design to meet timing
-- Test and measure speeds
+- Test and measure 
+
+
+
+Testbench ideas:
+
+Targeted module testbenches:
+	ARP Engine - Acts as entire other end of ARP system, sends requests and replies, ensured both TB and module resolve address correctly, notes the time it takes and the number of requests
+	Packetizer - simulates incoming a single packet from transmission module, verifies correct header (all fields & checksum) received on other end, verifies full packet is correctly formed. Use a very basic scoreboard structure.
+
+Full functionality:
+	Frame reception: TB sends entire frame, saves reconstructed frame to an image. Packets are sent out of order and specific ones are dropped. Scoreboard?
+	Frame transmission: Injects camera data, saves received frame to an image. Scoreboard?
